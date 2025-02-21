@@ -1,6 +1,8 @@
 
 This is a very simplistic authorization server for prototypes that need one. See [Udemy Source Tutorial](https://www.udemy.com/course/spring-framework-6-beginner-to-guru/learn/lecture/36097742#notes)
 
+Navigate to the root directory and run this project using `mvn spring-boot:run`. Point your resource server to this server.
+
 # HTTP request to fetch a token
 
 - See api-tests folder for Bruno api call.
