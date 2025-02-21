@@ -41,9 +41,12 @@ import java.util.UUID;
 public class SecurityConfig {
     // Set up authorization server end points.
     @Bean
+    // Initialize this as first to be configured in the chain.
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
             throws Exception {
+
+        // Configuration applies default security as well as providing a set of endpoints
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
 
         // Configure Open ID Connect (although not used in this demo)
@@ -68,6 +71,7 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
             throws Exception {
+        // Authorize all requests, otherwise redirect to form login.
         http
                 .authorizeHttpRequests((authorize) -> authorize
                         .anyRequest().authenticated()
@@ -94,30 +98,41 @@ public class SecurityConfig {
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
+        // Create a new registered client
         RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("messaging-client")
+                // You would prefer, in a prod environment to encrypt this at rest.
+                // {noop} gets dropped so the client secret is actually only "secret"
                 .clientSecret("{noop}secret")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                // Client Flow so...
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                // ... configure of redirects simply stubs (not valid for our client flow example)
                 .redirectUri("http://127.0.0.1:8080/login/oauth2/code/messaging-client-oidc")
                 .redirectUri("http://127.0.0.1:8080/authorized")
+                // Open ID Connect scopes...
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
                 .scope("message.read")
                 .scope("message.write")
+                // Build these settings...
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(true).build())
                 .build();
 
+        // Use an in-memory repository. Can be configured to use a Spring JDBC database...
         return new InMemoryRegisteredClientRepository(registeredClient);
     }
 
     @Bean
     public JWKSource<SecurityContext> jwkSource() {
+        // Generate public and private key
         KeyPair keyPair = generateRsaKey();
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+
+        // Set up the key to sign the JWT token
         RSAKey rsaKey = new RSAKey.Builder(publicKey)
                 .privateKey(privateKey)
                 .keyID(UUID.randomUUID().toString())
@@ -139,6 +154,7 @@ public class SecurityConfig {
         return keyPair;
     }
 
+    // Decode a JSON Web token (JWT)
     @Bean
     public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);

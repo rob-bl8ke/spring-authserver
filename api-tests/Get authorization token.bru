@@ -1,0 +1,29 @@
+meta {
+  name: Get authorization token
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:9000/oauth2/token?grant_type=client_credentials&scope=message.read%20message.write
+  body: none
+  auth: basic
+}
+
+params:query {
+  grant_type: client_credentials
+  scope: message.read%20message.write
+}
+
+headers {
+  content-type: application/x-www-form-urlencoded
+  accept: */*
+  accept-encoding: gzip, deflate, br
+  cache-control: no-cache
+  connection: keep-alive
+}
+
+auth:basic {
+  username: messaging-client
+  password: secret
+}
